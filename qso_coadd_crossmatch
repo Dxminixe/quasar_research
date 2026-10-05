@@ -1,0 +1,36 @@
+import numpy as np 
+import matplotlib.pyplot as plt 
+import importlib
+from astropy.io import fits 
+from astropy.table import Table, join
+
+import matplotlib.pyplot as plt
+import importlib
+from astropy.io import fits
+from astropy.table import Table, join
+
+qso = fits.open('QSO_cat_iron_cumulative_v0.fits')
+coadd = fits.open('coadd-main-dark-0.fits')
+
+qso_table = Table(qso[1].data)
+coadd_table = Table(coadd[1].data)
+
+qso_filtered = qso_table[qso_table['Z'] >= 2.1]
+coadd_filtered = coadd_table[coadd_table['FLUX_Z'] >= 2.1]
+
+matched_table = join(qso_filtered, coadd_filtered, keys='TARGETID', join_type='inner')
+
+waves = coadd['B_WAVELENGTH'].data
+fluxes = coadd['B_FLUX'].data
+
+# Plot first 10 matched spectra
+for i in range(min(10, len(matched_table))):
+    z = matched_table['Z'][i]
+    rest_waves = waves / (1 + z)
+    
+    plt.figure()
+    plt.plot(rest_waves, fluxes[i], label=f"Target {matched_table['TARGETID'][i]}")
+    plt.xlabel('Restframe Wavelength (Å)')
+    plt.ylabel('Flux')
+    plt.legend()
+    plt.show()
